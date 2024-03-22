@@ -66,19 +66,32 @@ func (c *Client) Find(database string, collection string, filter interface{}) []
 	db := c.client.Database(database)
 	col := db.Collection(collection)
 	log.Print(filter_is, filter)
-	// cur, err := col.Find(context.TODO(), filter)
+	//cur, err := col.Find(context.TODO(), filter)
 	_, err := col.Find(context.TODO(), filter)
-
 	if err != nil {
 		log.Fatal(err)
 	}
 	var results []bson.M
-
 	// commeting this out for testing purposes
 	// if err = cur.All(context.TODO(), &results); err != nil {
 	// 	panic(err)
 	// }
+	return results
+}
 
+func (c *Client) Aggregate(database string, collection string, pipeline interface{}) []bson.M {
+	db := c.client.Database(database)
+	col := db.Collection(collection)
+	log.Print(filter_is, pipeline)
+	_, err := col.Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		log.Fatal(err)
+	}
+	var results []bson.M
+	// commeting this out for testing purposes
+	// if err = cur.All(context.TODO(), &results); err != nil {
+	// 	panic(err)
+	// }
 	return results
 }
 
@@ -106,6 +119,26 @@ func (c *Client) UpdateOne(database string, collection string, filter interface{
 	col := db.Collection(collection)
 	update := bson.D{{"$set", data}}
 	result, err := col.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// opts := options.FindOne().SetSort(bson.D{{"_id", 1}})
+	// err = col.FindOne(context.TODO(), filter, opts).Decode(&result)
+	// if err == mongo.ErrNoDocuments {
+	// 	log.Printf("No document was found for filter %v", filter)
+	// 	return nil
+	// }
+	log.Printf("found document %v", result)
+	return nil
+}
+
+func (c *Client) UpsertOne(database string, collection string, filter interface{}, update interface{}) error {
+	// var result bson.M
+	db := c.client.Database(database)
+	col := db.Collection(collection)
+	options := options.Update().SetUpsert(true)
+	result, err := col.UpdateOne(context.TODO(), filter, update, options)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -151,14 +184,13 @@ func (c *Client) DeleteOne(database string, collection string, filter map[string
 func (c *Client) DeleteMany(database string, collection string, filter map[string]string, hint string) error {
 	db := c.client.Database(database)
 	col := db.Collection(collection)
+	//opts := options.Delete().SetHint(bson.D{{"_id", 1}})
 
 	opts := options.Delete()
 
 	if len(hint) > 0 {
 		opts = opts.SetHint(bson.D{{hint, 1}})
 	}
-
-	// opts := options.Delete().SetHint(bson.D{{"_id", 1}})
 	log.Print(filter_is, filter)
 	result, err := col.DeleteMany(context.TODO(), filter, opts)
 	if err != nil {
