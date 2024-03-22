@@ -164,5 +164,7 @@ func (c *Client) DropCollection(database string, collection string) error {
 	if err != nil {
 		log.Fatal(err)
 	}
+	
+	
 	return nil
 }
